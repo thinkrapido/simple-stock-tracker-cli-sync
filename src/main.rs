@@ -2,10 +2,11 @@
 mod tests;
 mod types;
 
-//use crate::types::*;
+use crate::types::*;
 use clap::{Arg, App};
 use chrono::prelude::*;
 use chrono::Duration;
+use yahoo_finance_api as yahoo;
 
 fn main() {
 
@@ -53,13 +54,20 @@ fn main() {
         passed_date = passed_date.checked_add_signed(Duration::days(-d.parse::<i64>().unwrap())).unwrap();
     }
     if let Some(d) = matches.value_of("months_back") {
-        passed_date = add_months(&passed_date, -d.parse::<i32>().unwrap());;
+        passed_date = add_months(&passed_date, -d.parse::<i32>().unwrap());
     }
     if let Some(d) = matches.value_of("years_back") {
         passed_date = add_years(&passed_date, -d.parse::<i32>().unwrap());
     }
 
-    print!("SYMBOL: {} - interval: {} to {} ", symbol, today.format("%Y-%m-%d"), passed_date.format("%Y-%m-%d"));
+    let provider = yahoo::YahooConnector::new();
+    let response = provider.get_quote_history_interval(symbol, passed_date.and_hms(0,0,0), today.and_hms(0,0,0), "1d");
+    let quotes = response.unwrap().quotes().unwrap();
+    let quotes = quotes.into_iter().map(|quote| StockData::new(symbol.to_string(), Utc.timestamp(quote.timestamp as i64, 0)).close(quote.adjclose.into()));
+    println!("\n\n{}'s quotes of the period: {} to {}", symbol, passed_date.format("%Y-%m-%d"), today.format("%Y-%m-%d"));
+    for quote in quotes {
+        println!("{:?}", quote);
+    }
 
 }
 
@@ -67,11 +75,11 @@ fn add_years(date: &Date<Utc>, years: i32) -> Date<Utc>{
     Utc.ymd(date.year() + years, date.month(), date.day())
 }
 fn add_months(date: &Date<Utc>, months: i32) -> Date<Utc>{
+    let mut months = (date.month() as i32 + months) % 12;
     let mut years = months / 12;
-    let mut months = months % 12;
     if months < 0 {
         months += 12;
         years -= 1;
     }
-    Utc.ymd(date.year() + years, date.month() + months as u32, date.day())
+    Utc.ymd(date.year() + years, months as u32, date.day())
 }

@@ -1,7 +1,7 @@
 
 use chrono::prelude::*;
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Price {
     value: f32,
 }
@@ -23,7 +23,7 @@ impl ToString for Price {
 
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Debug)]
 pub struct Percentage {
     value: f32,
 }
@@ -45,7 +45,7 @@ impl ToString for Percentage {
 
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Timestamp {
     datetime: DateTime<Utc>,
 }
@@ -64,15 +64,11 @@ impl ToString for Timestamp {
 
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct StockData {
     datetime: Timestamp,
     stock_symbol: String,
     close: Option<Price>,
-    change: Option<Percentage>,
-    min: Option<Price>,
-    max: Option<Price>,
-    sma_30: Option<Price>,
 }
 impl StockData {
 
@@ -95,33 +91,13 @@ impl StockData {
         StockData { close: Some(close), ..self.clone() }
     }
 
-    pub fn change(&self, change: Percentage) -> Self {
-        StockData { change: Some(change), ..self.clone() }
-    }
-
-    pub fn min(&self, min: Price) -> Self {
-        StockData { min: Some(min), ..self.clone() }
-    }
-
-    pub fn max(&self, max: Price) -> Self {
-        StockData { max: Some(max), ..self.clone() }
-    }
-
-    pub fn sma_30(&self, sma_30: Price) -> Self {
-        StockData { sma_30: Some(sma_30), ..self.clone() }
-    }
-
 }
 impl ToString for StockData {
     fn to_string(&self) -> String {
-        format!("{},{},{},{},{},{},{}", 
+        format!("{},{},{}", 
                 self.datetime.to_string(),
                 self.stock_symbol,
                 format(self.close),
-                format(self.change),
-                format(self.min),
-                format(self.max),
-                format(self.sma_30),
             )
     }
 }
