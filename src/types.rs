@@ -22,6 +22,11 @@ impl ToString for Price {
     }
 
 }
+impl From<Price> for f32 {
+    fn from(p: Price) -> Self {
+        p.value
+    }
+}
 
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Percentage {
@@ -29,12 +34,12 @@ pub struct Percentage {
 }
 impl From<f32> for Percentage {
     fn from(value: f32) -> Self {
-        Percentage{ value }
+        Percentage{ value: (value - 1_f32) * 100_f32 }
     }
 }
 impl From<f64> for Percentage {
     fn from(value: f64) -> Self {
-        Percentage{ value: value as f32 }
+        (value as f32).into()
     }
 }
 impl ToString for Percentage {
@@ -90,6 +95,12 @@ impl StockData {
     pub fn close(&self, close: Price) -> Self {
         StockData { close: Some(close), ..self.clone() }
     }
+    pub fn close_value(&self) -> Price {
+        match self.close {
+            Some(p) => p,
+            None => 0_f32.into(),
+        }
+    }
 
 }
 impl ToString for StockData {
@@ -102,7 +113,7 @@ impl ToString for StockData {
     }
 }
 
-fn format<Val: ToString>(value: Option<Val>) -> String {
+pub fn format<Val: ToString>(value: Option<Val>) -> String {
     match value {
         Some(s) => s.to_string(),
         None => "-".to_string(),
