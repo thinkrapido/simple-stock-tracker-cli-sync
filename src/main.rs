@@ -7,8 +7,9 @@ use clap::{Arg, App};
 use chrono::prelude::*;
 use chrono::Duration;
 use yahoo_finance_api as yahoo;
+use std::io::{self, Write};
 
-fn main() {
+fn main() -> io::Result<()>{
 
     let matches = App::new("finance reader sync")
         .version("1.0")
@@ -67,8 +68,13 @@ fn main() {
         passed_date = add_years(&passed_date, -d.parse::<i32>().unwrap());
     }
 
+    let mut stdout = io::stdout();
+
     let provider = yahoo::YahooConnector::new();
-    println!("period start,symbol,price,change %,min,max,30d avg");
+    
+    //stdout.write_all(&format!("\nquotes of the period: {} to {}\n\n", passed_date.format("%Y-%m-%d"), today.format("%Y-%m-%d")).into_bytes())?;
+    stdout.write_all(&format!("period start,symbol,price,change %,min,max,30d avg\n").into_bytes())?;
+    
     for symbol in matches.values_of("symbol").unwrap() {
         let response = provider.get_quote_history_interval(symbol, passed_date.and_hms(0,0,0), today.and_hms(0,0,0), "1d");
         let quotes = response.unwrap().quotes().unwrap();
@@ -80,17 +86,18 @@ fn main() {
             len if len >= 30 => Some((quotes[quotes.len() - 30 ..].iter().fold(0_f32, |acc, x| acc + f32::from(x.close_value())) / 30_f32).into()),
             _ => None,
         };
-//        println!("\n\n{}'s quotes of the period: {} to {}", symbol, passed_date.format("%Y-%m-%d"), today.format("%Y-%m-%d"));
 
-        print!("{},", passed_date.and_hms(0,0,0).to_rfc3339());
-        print!("{},", symbol);
-        print!("{},", quotes[quotes.len() - 1].close_value().to_string());
-        print!("{},", change.to_string());
-        print!("{},", min.to_string());
-        print!("{},", max.to_string());
-        print!("{}", format(sma_30));
-        println!("");
-}
+        stdout.write_all(&format!("{},", passed_date.and_hms(0,0,0).to_rfc3339()).into_bytes())?;
+        stdout.write_all(&format!("{},", symbol).into_bytes())?;
+        stdout.write_all(&format!("{},", quotes[quotes.len() - 1].close_value().to_string()).into_bytes())?;
+        stdout.write_all(&format!("{},", change.to_string()).into_bytes())?;
+        stdout.write_all(&format!("{},", min.to_string()).into_bytes())?;
+        stdout.write_all(&format!("{},", max.to_string()).into_bytes())?;
+        stdout.write_all(&format!("{}", format(sma_30)).into_bytes())?;
+        stdout.write_all(&format!("\n").into_bytes())?;
+    }
+
+    Ok(())
 }
 
 fn add_years(date: &Date<Utc>, years: i32) -> Date<Utc>{
