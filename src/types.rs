@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use chrono::prelude::*;
 
 #[derive(Default, Copy, Clone, Debug)]
@@ -16,9 +17,9 @@ impl From<f64> for Price {
         }
     }
 }
-impl ToString for Price {
-    fn to_string(&self) -> String {
-        format!("${:.2}", self.value)
+impl Display for Price {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "${:.2}", self.value)
     }
 }
 impl From<Price> for f32 {
@@ -60,9 +61,9 @@ impl Default for Timestamp {
         }
     }
 }
-impl ToString for Timestamp {
-    fn to_string(&self) -> String {
-        self.datetime.to_rfc3339()
+impl Display for Timestamp {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.datetime.to_rfc3339())
     }
 }
 
@@ -107,13 +108,13 @@ impl StockData {
         }
     }
 }
-impl ToString for StockData {
-    fn to_string(&self) -> String {
-        format!(
-            "{},{},{}",
-            self.datetime.to_string(),
-            self.stock_symbol,
-            format(self.close),
+impl Display for StockData {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,
+               "{},{},{}",
+               self.datetime.to_string(),
+               self.stock_symbol,
+               format(self.close),
         )
     }
 }
